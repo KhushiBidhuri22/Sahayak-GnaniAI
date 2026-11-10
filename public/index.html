@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sahayak</title>
+<style>
+  :root { --bg:#0f172a; --card:#1e293b; --line:#334155; --txt:#e2e8f0; --mut:#94a3b8; --acc:#38bdf8; --ok:#4ade80; --warn:#fbbf24; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:system-ui,sans-serif; background:var(--bg); color:var(--txt); }
+  header { padding:14px 20px; border-bottom:1px solid var(--line); display:flex; gap:12px; align-items:baseline; flex-wrap:wrap; }
+  header h1 { margin:0; font-size:20px; } header span { color:var(--mut); font-size:13px; }
+  main { display:grid; grid-template-columns:320px 1fr 340px; gap:14px; padding:14px; }
+  @media (max-width:1000px){ main{ grid-template-columns:1fr; } }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px; }
+  .card h2 { margin:0 0 10px; font-size:13px; color:var(--mut); text-transform:uppercase; letter-spacing:.06em; }
+  button { font:inherit; cursor:pointer; border:1px solid var(--line); background:#0b1220; color:var(--txt); padding:8px 12px; border-radius:8px; }
+  button:hover { border-color:var(--acc); }
+  #big { width:100%; height:90px; font-size:18px; font-weight:700; background:var(--acc); color:#04121c; border:none; border-radius:14px; }
+  #big.live { background:var(--warn); }
+  input[type=text] { width:100%; padding:9px; border-radius:8px; border:1px solid var(--line); background:#0b1220; color:var(--txt); font:inherit; }
+  .row { display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; align-items:center; }
+  .pill { font-size:12px; padding:2px 8px; border-radius:99px; border:1px solid var(--line); color:var(--mut); }
+  .pill.on { color:var(--ok); border-color:var(--ok); }
+  #speaker { min-height:90px; font-size:15px; line-height:1.4; background:#0b1220; border-radius:8px; padding:10px; border:1px dashed var(--line); }
+  #speaker small { color:var(--mut); display:block; margin-bottom:4px; }
+  .log { max-height:230px; overflow:auto; font-size:13px; }
+  .log div { padding:5px 0; border-bottom:1px solid var(--line); }
+  .AI { color:var(--acc); } .Reception { color:var(--warn); } .You { color:var(--ok); }
+  svg text { fill:var(--txt); font-size:12px; }
+  .node { cursor:pointer; } .node circle { fill:#0b1220; stroke:var(--acc); stroke-width:2; }
+  .node:hover circle { fill:var(--acc); }
+  .onroute circle { stroke:var(--warn); }
+  #chips button { font-size:12px; padding:5px 9px; }
+  .dest circle { stroke:var(--ok); stroke-width:3; }
+  #you { fill:var(--warn); }
+  .tabs button.active { border-color:var(--acc); color:var(--acc); }
+  .consent { display:none; background:#3b2f0a; border:1px solid var(--warn); padding:10px; border-radius:8px; margin-top:10px; }
+  .consent.show { display:block; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Sahayak</h1><span>Voice-first errand companion. Prototype of a wearable for visually impaired users. It assists, never replaces, a white cane or human help.</span>
+  <span id="gstatus"></span>
+</header>
+
+<main>
+  <!-- WEARABLE SIMULATOR -->
+  <section class="card">
+    <h2>Simulated wearable</h2>
+    <button id="big">Press &amp; speak</button>
+    <div class="row">
+      <label>Language
+        <select id="lang"><option value="hi">Hinglish (hi-IN)</option><option value="en">English (en-IN)</option></select>
+      </label>
+      <span id="mic" class="pill">mic idle</span>
+    </div>
+    <div class="row" style="flex-direction:column;align-items:stretch">
+      <input id="typed" type="text" placeholder='Or type: "Mujhe ophthalmology department jaana hai"'>
+      <button id="send">Send as speech</button>
+    </div>
+    <h2 style="margin-top:16px">Speaker output</h2>
+    <div id="speaker"><small>Bone-conduction audio</small><span id="said">Press the button and say your destination.</span></div>
+    <div class="consent" id="consent">
+      <div id="consentQ"></div>
+      <div class="row"><button id="yes">Haan / Yes</button><button id="no">Nahi / No</button></div>
+    </div>
+    <div class="row" style="margin-top:14px">
+      <button id="repeat">Repeat</button><button id="pause">Pause</button><button id="reset">Reset demo</button>
+    </div>
+  </section>
+
+  <!-- MAP -->
+  <section class="card">
+    <h2>Venue map — click a checkpoint to "scan" its QR/NFC tag</h2>
+    <div class="row tabs" style="margin:0 0 8px"><button data-f="1" class="active">Floor 1</button><button data-f="2">Floor 2</button>
+      <span class="pill" id="where"></span><span class="pill" id="goal"></span></div>
+    <div class="row" id="chips" style="margin:0 0 8px"></div>
+    <svg id="map" viewBox="0 0 820 480" width="100%"></svg>
+    <h2 style="margin-top:12px">Caregiver (optional)</h2>
+    <label><input type="checkbox" id="care"> I consent to share journey status with my caregiver</label>
+    <div class="log" id="carelog"></div>
+  </section>
+
+  <!-- CALL -->
+  <section class="card">
+    <h2>Reception call transcript</h2>
+    <div class="log" id="calllog" style="min-height:140px"></div>
+    <div id="callhint" style="color:var(--warn);font-size:13px;margin-top:6px"></div>
+    <div class="row"><button id="callnow">Ask reception (voice, needs consent)</button><button id="recdone">Reception finished</button></div>
+    <p style="color:var(--mut);font-size:12px">Reception desk mode: Sahayak says aloud that it is an AI assistant and asks for directions. A person answers out loud (a teammate can play the receptionist). With Gnani keys the voice is real Timbre + Prisma; without them it is simulated.</p>
+    <h2>Event log</h2>
+    <div class="log" id="events"></div>
+  </section>
+</main>
+
+<script>
+const $ = s => document.querySelector(s);
+const S = { venue:null, gnani:{}, loc:"entrance", dest:null, steps:[], floor:1, consent:null, helpDone:false, lastSaid:"" , paused:false };
+const T = {
+  askDest:{en:"Which place do you want to go to?",hi:"Aap kahaan jaana chahte hain?"},
+  noDest:{en:"Sorry, I did not catch the destination. Please say it again.",hi:"Maaf kijiye, jagah samajh nahi aayi. Dobara boliye."},
+  noRoute:{en:"I cannot find a route from here.",hi:"Yahaan se raasta nahi mil raha."},
+  startLead:{en:"Okay. ",hi:"Theek hai. "},
+  at:{en:"You are at ",hi:"Aap yahaan hain: "},
+  ask:{en:"Shall I call reception and ask?",hi:"Kya main reception ko call karke poochun?"},
+  calling:{en:"Asking reception now. I will tell them I am an AI assistant.",hi:"Reception se poochh raha hoon. Main unhe bataunga ki main AI assistant hoon."},
+  declined:{en:"Okay, I will not call. ",hi:"Theek hai, call nahi karunga. "},
+  careAsk:{en:"Shall I share your journey status with your caregiver?",hi:"Kya main aapke caregiver ko journey ki jaankari bhejun?"},
+  callFail:{en:"I could not reach reception. Please ask a staff member nearby for help.",hi:"Reception se baat nahi ho paayi. Kripya paas ke staff se madad maangiye."}
+};
+const t = k => T[k][S.venue ? $("#lang").value : "en"];
+const L = () => $("#lang").value;
+
+const ev = m => { const d=document.createElement("div"); d.textContent=new Date().toLocaleTimeString()+"  "+m; $("#events").prepend(d); };
+const care = m => { if(!$("#care").checked) return; const d=document.createElement("div"); d.textContent="SMS (simulated) → caregiver: "+m; $("#carelog").prepend(d); };
+
+// ---------- SPEECH OUT (Gnani Timbre TTS if configured, else browser voice) ----------
+let curAudio=null;
+const until = (fn, ms=30000) => Promise.race([new Promise(fn), new Promise(r=>setTimeout(r,ms))]);
+function stopSpeech() { if (curAudio) { curAudio.pause(); curAudio=null; } if ("speechSynthesis" in window) speechSynthesis.cancel(); }
+// Resolves when the audio has finished playing, so we never record our own voice.
+async function speak(text, lg) {
+  const lang = lg || L();
+  S.lastSaid = text; $("#said").textContent = text; ev("SPEAK: "+text);
+  if (S.paused) return;
+  try {
+    if (S.gnani.tts) {
+      const r = await fetch("/api/tts",{method:"POST",body:JSON.stringify({text,lang})});
+      if (r.ok) {
+        const a = new Audio(URL.createObjectURL(await r.blob())); curAudio = a;
+        await until(res => { a.onended=res; a.onerror=res; a.onpause=res; a.play().catch(res); });
+        return;
+      }
+      ev("Gnani TTS "+r.status+", using browser voice: "+(await r.text()).slice(0,160));
+    }
+  } catch(e) { ev("Gnani TTS failed, using browser voice: "+e.message); }
+  if ("speechSynthesis" in window) {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text); u.lang = lang==="hi"?"hi-IN":"en-IN"; u.rate = .95;
+    await until(res => { u.onend=res; u.onerror=res; speechSynthesis.speak(u); });
+  }
+}
+
+// ---------- SPEECH IN (Gnani Prisma STT; browser recognition as fallback) ----------
+let recorder=null;
+function setMic(txt, on) { $("#mic").textContent=txt; $("#mic").classList.toggle("on",!!on); $("#big").classList.toggle("live",!!on); }
+// Record from the mic, convert to 16 kHz WAV in the browser, send to /api/stt. Resolves to the transcript ("" if none).
+async function recordText(maxMs) {
+  let stream;
+  try { stream = await navigator.mediaDevices.getUserMedia({audio:true}); } catch(e) { ev("mic denied: "+e.message); return ""; }
+  const chunks=[]; recorder = new MediaRecorder(stream);
+  recorder.ondataavailable = e => chunks.push(e.data);
+  setMic("recording… press again to stop", true);
+  return new Promise(resolve => {
+    const timer = setTimeout(()=>recorder && recorder.stop(), maxMs);
+    recorder.onstop = async () => {
+      clearTimeout(timer); stream.getTracks().forEach(tr=>tr.stop()); recorder=null; setMic("transcribing…", false);
+      try {
+        const wav = await toWav(new Blob(chunks));
+        const r = await fetch("/api/stt?lang="+L(), {method:"POST", body:wav});
+        const j = await r.json(); if (!r.ok) throw new Error(j.error);
+        setMic("mic idle", false); resolve(j.text || "");
+      } catch(e) { setMic("mic idle", false); ev("Gnani STT failed: "+e.message+" (you can type instead)"); resolve(""); }
+    };
+    recorder.start();
+  });
+}
+async function listen() {
+  if (recorder) { recorder.stop(); return; }                     // second press = stop
+  if (!S.gnani.stt) return listenBrowser();
+  const text = await recordText(7000);
+  if (!text) return speak(t("noDest"));
+  handle(text);
+}
+async function toWav(blob) {
+  const ac = new AudioContext(); const dec = await ac.decodeAudioData(await blob.arrayBuffer()); ac.close();
+  const off = new OfflineAudioContext(1, Math.ceil(dec.duration*16000), 16000);
+  const src = off.createBufferSource(); src.buffer = dec; src.connect(off.destination); src.start();
+  const data = (await off.startRendering()).getChannelData(0);
+  const v = new DataView(new ArrayBuffer(44+data.length*2)); const w=(o,s)=>[...s].forEach((c,i)=>v.setUint8(o+i,c.charCodeAt(0)));
+  w(0,"RIFF"); v.setUint32(4,36+data.length*2,true); w(8,"WAVEfmt "); v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,1,true);
+  v.setUint32(24,16000,true); v.setUint32(28,32000,true); v.setUint16(32,2,true); v.setUint16(34,16,true); w(36,"data"); v.setUint32(40,data.length*2,true);
+  for (let i=0;i<data.length;i++){ const s=Math.max(-1,Math.min(1,data[i])); v.setInt16(44+i*2, s<0?s*0x8000:s*0x7fff, true); }
+  return new Blob([v],{type:"audio/wav"});
+}
+
+// Browser speech recognition (demo-mode fallback)
+let rec=null;
+function listenBrowser() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { $("#mic").textContent="no mic API: type instead"; $("#typed").focus(); return; }
+  rec = new SR(); rec.lang = L()==="hi"?"hi-IN":"en-IN"; rec.interimResults=false;
+  $("#mic").textContent="listening…"; $("#mic").classList.add("on"); $("#big").classList.add("live");
+  rec.onresult = e => handle(e.results[0][0].transcript);
+  rec.onerror = e => ev("mic error: "+e.error);
+  rec.onend = () => { $("#mic").textContent="mic idle"; $("#mic").classList.remove("on"); $("#big").classList.remove("live"); };
+  rec.start();
+}
+
+// ---------- CONVERSATION LOGIC ----------
+const YES=/\b(haan|han|ha|yes|yeah|ok|okay|theek|kar do|call)\b/i, NO=/\b(nahi|nahin|no|mat|don't)\b/i;
+async function handle(text) {
+  ev("HEARD: "+text);
+  if (S.consent) { if (YES.test(text)) return answerConsent(true); if (NO.test(text)) return answerConsent(false); }
+  const r = await (await fetch("/api/parse",{method:"POST",body:JSON.stringify({text})})).json();
+  if (!r.destination) return speak(t("noDest"));
+  S.dest = r.destination; S.helpDone = false;
+  $("#goal").textContent = "Goal: "+S.venue.nodes[S.dest].label; drawMap();
+  care("Journey started to "+S.venue.nodes[S.dest].label);
+  await plan(true);
+}
+async function plan(first) {
+  const r = await fetch("/api/route",{method:"POST",body:JSON.stringify({from:S.loc,to:S.dest})});
+  if (!r.ok) return speak(t("noRoute"));
+  S.steps = (await r.json()).steps; drawMap();
+  await speak((first?t("startLead"):"") + S.steps[0][L()]);
+}
+function askConsent(kind) {
+  S.consent = kind;
+  const q = kind==="call" ? t("ask") : t("careAsk");
+  $("#consentQ").textContent = q; $("#consent").classList.add("show"); speak(q);
+}
+async function answerConsent(yes) {
+  const kind = S.consent; S.consent=null; $("#consent").classList.remove("show");
+  if (kind==="call") {
+    if (yes) return callReception();
+    S.helpDone = true; ev("User declined call");
+    await speak(t("declined")); return plan(false);
+  }
+}
+// Reception desk mode: Timbre speaks the AI-disclosure + question aloud, a person at the desk
+// answers out loud, Prisma transcribes the answer, Sahayak reads it back as guidance.
+function logCall(who, text) { const d=document.createElement("div"); d.innerHTML=`<b class="${who}">${who}:</b> `; d.append(text); $("#calllog").append(d); }
+async function callReception() {
+  $("#calllog").innerHTML=""; $("#callhint").textContent="";
+  const sc = await (await fetch("/api/reception-script?dest="+S.dest)).json();
+  await speak(t("calling"));
+  const q = sc.disclosure+" "+sc.question;
+  logCall("AI", q);
+  await speak(q, "en");                              // the receptionist hears this aloud
+  let reply = "";
+  if (S.gnani.stt) {
+    $("#callhint").textContent = "Receptionist: please answer now. Press 'Reception finished' when done (auto-stops after 20 s).";
+    reply = await recordText(20000);
+    $("#callhint").textContent = "";
+  } else {
+    ev("Demo mode (no Gnani key): simulated receptionist");
+    await new Promise(r=>setTimeout(r,1500)); reply = sc.mockReply;
+  }
+  S.helpDone = true;
+  if (!reply) { ev("No reply heard"); await speak(t("callFail")); return plan(false); }
+  logCall("Reception", reply);
+  care("Asked reception for directions");
+  await speak((L()==="hi" ? "Reception ne bataya: " : "Reception said: ") + reply);
+  setTimeout(()=>plan(false), 2500);
+}
+
+// ---------- LOCATION (QR/NFC scan simulation) ----------
+async function scan(id) {
+  const expected = S.steps.length ? S.steps[0].to : null, prev = S.loc;
+  S.loc = id; S.floor = S.venue.nodes[id].floor; const n = S.venue.nodes[id];
+  ev("Scanned "+n.qr+" → "+n.label); drawMap();
+  if (!S.dest) return speak(t("at")+n.label);
+  if (id === S.dest) {
+    const a = S.venue.arrival[id];
+    await speak(a ? a[L()] : (L()==="hi" ? "Aap "+n.label+" par pahunch gaye hain." : "You have reached "+n.label+"."));
+    care("Arrived at "+n.label); S.steps=[]; drawMap(); return;
+  }
+  const ah = n.askHelp===true || (Array.isArray(n.askHelp) && n.askHelp.includes(S.dest));
+  if (ah && !S.helpDone) { await speak(t("at")+n.label+". "); return askConsent("call"); }
+  if (expected && id!==expected && id!==prev)
+    await speak(L()==="hi" ? "Aap raaste se hat gaye hain. Naya raasta dhoondh raha hoon." : "You are off route. Finding a new way.");
+  await plan(false);
+}
+
+// ---------- MAP ----------
+function drawMap() {
+  const V=S.venue, svg=$("#map"); let h="";
+  const routeEdges=new Set(S.steps.flatMap(s=>[s.from+"|"+s.to, s.to+"|"+s.from]));
+  const routeNodes=new Set(S.steps.flatMap(s=>[s.from, s.to]));
+  h+=`<rect x="8" y="8" width="804" height="464" rx="18" fill="#0b1220" stroke="#334155"/>`;
+  h+=`<text x="26" y="40" style="font-size:18px;font-weight:700">Floor ${S.floor}${S.floor===1?" (Ground)":""}</text>`;
+  const same = e => V.nodes[e.from].floor===S.floor && V.nodes[e.to].floor===S.floor;
+  for (const e of V.edges) if (same(e)) { const a=V.nodes[e.from], b=V.nodes[e.to];
+    h+=`<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="#1e3a4a" stroke-width="22" stroke-linecap="round"/>`; }
+  for (const e of V.edges) if (same(e)) { const a=V.nodes[e.from], b=V.nodes[e.to], hot=routeEdges.has(e.from+"|"+e.to);
+    h+=`<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="${hot?"#fbbf24":"#475569"}" stroke-width="${hot?6:2}" ${hot?"":'stroke-dasharray="6 6"'} stroke-linecap="round"/>`; }
+  for (const [id,n] of Object.entries(V.nodes)) if (n.floor===S.floor) {
+    const isLift = /^lift/.test(id), hot = routeNodes.has(id);
+    h+=`<g class="node ${id===S.dest?"dest":""} ${hot?"onroute":""}" onclick="scan('${id}')">`
+     + `<circle cx="${n.x}" cy="${n.y}" r="20"/>`
+     + `<text x="${n.x}" y="${n.y+4}" text-anchor="middle" style="font-size:${isLift?16:10}px">${isLift?"⇅":n.qr}</text>`
+     + `<text x="${n.x}" y="${n.y+40}" text-anchor="middle" style="font-size:13px;font-weight:600">${n.label}</text></g>`;
+  }
+  const me=V.nodes[S.loc];
+  if (me.floor===S.floor) h+=`<circle id="you" cx="${me.x}" cy="${me.y-34}" r="9"/><text x="${me.x}" y="${me.y-50}" text-anchor="middle" style="font-size:12px;font-weight:700">YOU</text>`;
+  svg.innerHTML=h; $("#where").textContent="At: "+me.label;
+  document.querySelectorAll(".tabs button[data-f]").forEach(b=>b.classList.toggle("active",+b.dataset.f===S.floor));
+}
+
+// ---------- WIRING ----------
+$("#big").onclick = () => { if (recorder) { recorder.stop(); return; } stopSpeech(); S.paused=false; listen(); };
+$("#recdone").onclick = () => { if (recorder) recorder.stop(); };
+$("#send").onclick = () => { const v=$("#typed").value.trim(); if(v){ $("#typed").value=""; handle(v);} };
+$("#typed").onkeydown = e => { if(e.key==="Enter") $("#send").click(); };
+$("#yes").onclick = () => answerConsent(true);
+$("#no").onclick = () => answerConsent(false);
+$("#repeat").onclick = () => { S.paused=false; speak(S.lastSaid || t("askDest")); };
+$("#pause").onclick = () => { S.paused=!S.paused; speechSynthesis.cancel(); $("#pause").textContent=S.paused?"Resume":"Pause"; };
+$("#callnow").onclick = () => { if(!S.dest){ speak(t("askDest")); return; } askConsent("call"); };
+$("#reset").onclick = () => { S.loc="entrance"; S.dest=null; S.steps=[]; S.helpDone=false; S.consent=null; $("#consent").classList.remove("show");
+  $("#goal").textContent=""; $("#calllog").innerHTML=""; $("#said").textContent="Press the button and say your destination."; S.floor=1; drawMap(); ev("Reset"); };
+document.querySelectorAll(".tabs button[data-f]").forEach(b=>b.onclick=()=>{ S.floor=+b.dataset.f; drawMap(); });
+
+(async () => {
+  const r = await (await fetch("/api/venue")).json(); S.venue=r.venue; S.gnani=r.gnani;
+  $("#gstatus").textContent = "Gnani: Prisma STT "+(r.gnani.stt?"on":"demo")+" · Timbre TTS "+(r.gnani.tts?"on":"browser voice");
+  drawMap(); ev("Ready at "+r.venue.name);
+  for (const id of Object.keys(r.venue.destinations)) { if (id==="lift1") continue;
+    const b=document.createElement("button"); b.textContent=r.venue.nodes[id].label; b.onclick=()=>handle("Mujhe "+r.venue.nodes[id].label+" jaana hai"); $("#chips").append(b); }
+})();
+</script>
+</body>
+</html>

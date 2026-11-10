@@ -1,0 +1,66 @@
+{
+  "name": "City Care Hospital (mock)",
+  "nodes": {
+    "entrance":      { "label": "Main Entrance",           "floor": 1, "x": 70,  "y": 250, "qr": "QR1" },
+    "reception":     { "label": "Reception",               "floor": 1, "x": 230, "y": 250, "qr": "QR2", "askHelp": ["ophthalmology", "cardiology", "ent", "billing"] },
+    "pharmacy":      { "label": "Pharmacy",                "floor": 1, "x": 230, "y": 110, "qr": "QR3" },
+    "junction1":     { "label": "Main Junction",           "floor": 1, "x": 410, "y": 250, "qr": "QR4" },
+    "cafeteria":     { "label": "Cafeteria",               "floor": 1, "x": 410, "y": 110, "qr": "QR5" },
+    "lab":           { "label": "Pathology Lab",           "floor": 1, "x": 410, "y": 400, "qr": "QR6" },
+    "lift1":         { "label": "Lift Lobby (Floor 1)",    "floor": 1, "x": 590, "y": 250, "qr": "QR7" },
+    "washroom":      { "label": "Washroom",                "floor": 1, "x": 590, "y": 110, "qr": "QR8" },
+    "radiology":     { "label": "X-Ray / Radiology",       "floor": 1, "x": 590, "y": 400, "qr": "QR9" },
+    "exit":          { "label": "East Exit",               "floor": 1, "x": 760, "y": 250, "qr": "QR10" },
+
+    "lift2":         { "label": "Lift Lobby (Floor 2)",    "floor": 2, "x": 590, "y": 250, "qr": "QR11" },
+    "junction2":     { "label": "Corridor Junction",       "floor": 2, "x": 410, "y": 250, "qr": "QR12" },
+    "cardiology":    { "label": "Cardiology",              "floor": 2, "x": 230, "y": 250, "qr": "QR13" },
+    "ophthalmology": { "label": "Ophthalmology Department","floor": 2, "x": 410, "y": 110, "qr": "QR14" },
+    "ent":           { "label": "ENT Clinic",              "floor": 2, "x": 410, "y": 400, "qr": "QR15" },
+    "billing":       { "label": "Billing Counter",         "floor": 2, "x": 760, "y": 250, "qr": "QR16" }
+  },
+  "edges": [
+    { "from": "entrance",  "to": "reception",  "en": "Walk straight 15 meters. Reception is ahead.", "hi": "Seedha 15 meter chaliye. Reception aage hai." },
+    { "from": "reception", "to": "pharmacy",   "en": "Turn left. The pharmacy is 10 meters ahead.", "hi": "Left mudiye. Pharmacy 10 meter aage hai." },
+    { "from": "reception", "to": "junction1",  "en": "Walk straight 20 meters to the main junction.", "hi": "Seedha 20 meter chaliye, main junction aayega." },
+    { "from": "junction1", "to": "cafeteria",  "en": "Turn left. The cafeteria is 10 meters ahead.", "hi": "Left mudiye. Cafeteria 10 meter aage hai." },
+    { "from": "junction1", "to": "lab",        "en": "Turn right. The pathology lab is 12 meters ahead.", "hi": "Right mudiye. Pathology lab 12 meter aage hai." },
+    { "from": "junction1", "to": "lift1",      "en": "Walk straight 20 meters. The lift is on your right.", "hi": "Seedha 20 meter chaliye. Lift aapke right side par hai." },
+    { "from": "lift1",     "to": "washroom",   "en": "Turn left. The washroom is 10 meters ahead.", "hi": "Left mudiye. Washroom 10 meter aage hai." },
+    { "from": "lift1",     "to": "radiology",  "en": "Turn right. X-ray is 12 meters ahead.", "hi": "Right mudiye. X-ray 12 meter aage hai." },
+    { "from": "lift1",     "to": "exit",       "en": "Walk straight 18 meters. The east exit is ahead.", "hi": "Seedha 18 meter chaliye. East exit aage hai." },
+    { "from": "lift1",     "to": "lift2",      "en": "Take the lift to the second floor.", "hi": "Lift se second floor par jaiye." },
+    { "from": "lift2",     "to": "junction2",  "en": "Exit the lift and turn left. Walk 20 meters.", "hi": "Lift se bahar nikal kar left mudiye. 20 meter chaliye." },
+    { "from": "lift2",     "to": "billing",    "en": "Exit the lift and walk straight 18 meters. Billing is ahead.", "hi": "Lift se bahar nikal kar seedha 18 meter chaliye. Billing aage hai." },
+    { "from": "junction2", "to": "cardiology", "en": "Walk straight 20 meters. Cardiology is ahead.", "hi": "Seedha 20 meter chaliye. Cardiology aage hai." },
+    { "from": "junction2", "to": "ophthalmology", "en": "Turn right. The department is 10 meters ahead.", "hi": "Right mudiye. Department 10 meter aage hai." },
+    { "from": "junction2", "to": "ent",        "en": "Turn left. The ENT clinic is 12 meters ahead.", "hi": "Left mudiye. ENT clinic 12 meter aage hai." }
+  ],
+  "destinations": {
+    "ophthalmology": ["ophthalmology", "ophthalmologist", "eye", "eyes", "aankh", "aankhon", "ankh", "नेत्र", "आंख", "आँख"],
+    "cardiology": ["cardiology", "cardiologist", "heart", "dil", "हृदय", "दिल"],
+    "ent": ["ent", "kaan", "nose", "throat", "gala", "कान", "गला"],
+    "pharmacy": ["pharmacy", "medicine", "medicines", "chemist", "dawai", "dawa", "दवाई", "दवा"],
+    "cafeteria": ["cafeteria", "canteen", "chai", "khana", "food", "कैंटीन"],
+    "lab": ["lab", "laboratory", "pathology", "blood test", "test", "जांच"],
+    "radiology": ["radiology", "xray", "x-ray", "x ray", "scan"],
+    "washroom": ["washroom", "toilet", "bathroom", "restroom", "शौचालय"],
+    "exit": ["exit", "bahar", "nikasi", "बाहर"],
+    "billing": ["billing", "bill", "payment", "cashier", "paise"],
+    "reception": ["reception", "registration", "counter", "enquiry"],
+    "lift1": ["lift", "elevator"]
+  },
+  "arrival": {
+    "ophthalmology": { "en": "You have reached the Ophthalmology Department. The registration counter is on your left.", "hi": "Aap ophthalmology department mein pahunch gaye hain. Registration counter aapke left side par hai." },
+    "cardiology":    { "en": "You have reached Cardiology. The counter is straight ahead.", "hi": "Aap cardiology mein pahunch gaye hain. Counter seedha aage hai." },
+    "ent":           { "en": "You have reached the ENT Clinic. The counter is on your right.", "hi": "Aap ENT clinic mein pahunch gaye hain. Counter aapke right side par hai." },
+    "pharmacy":      { "en": "You have reached the Pharmacy. The counter is straight ahead.", "hi": "Aap pharmacy par pahunch gaye hain. Counter seedha aage hai." },
+    "reception":     { "en": "You have reached Reception.", "hi": "Aap reception par pahunch gaye hain." }
+  },
+  "receptionScript": {
+    "disclosure": "Hello, this is Sahayak, an AI assistant speaking on behalf of a  visitor.",
+    "question": "Could you tell me the route from the main entrance to the {dest}?",
+    "mockReply": "Take the lift on the right side of the main corridor to the second floor, turn left, then follow the signs. It is a short walk from the lift.",
+    "summary": { "en": "Reception confirms: take the lift to the second floor, turn left, then follow the signs.", "hi": "Reception ne bataya: lift se second floor par jaiye, left mudiye, phir signs follow kijiye." }
+  }
+}
